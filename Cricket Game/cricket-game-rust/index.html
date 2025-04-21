@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cricket Game (Rust)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1e88e5;
+            --secondary-color: #4CAF50;
+            --accent-color: #FF9800;
+            --background-color: #f5f7fa;
+            --card-bg: #ffffff;
+            --text-primary: #2c3e50;
+            --text-secondary: #7f8c8d;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: var(--background-color);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            color: var(--text-primary);
+        }
+
+        .game-container {
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            font-weight: 700;
+            font-size: 2.5rem;
+            color: var(--primary-color);
+        }
+
+        .setup-panel {
+            background: var(--background-color);
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+
+        .setup-panel h2 {
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .setup-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .setup-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        input, select {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .scoreboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .player {
+            background: var(--background-color);
+            padding: 2rem;
+            border-radius: 12px;
+            transition: transform 0.3s ease;
+        }
+
+        .player.active {
+            transform: scale(1.05);
+            border: 2px solid var(--primary-color);
+        }
+
+        .player h2 {
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .player-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .score {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        button {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--primary-color);
+            color: white;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .game-log {
+            background: var(--background-color);
+            padding: 1.5rem;
+            border-radius: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .event {
+            padding: 0.5rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            margin-bottom: 0.5rem;
+        }
+
+        .result-screen {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            background: var(--background-color);
+            border-radius: 12px;
+            margin-top: 2rem;
+        }
+
+        .result-screen.show {
+            display: block;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Cricket Game</h1>
+        
+        <div class="setup-panel">
+            <h2>Game Setup</h2>
+            <div class="setup-grid">
+                <div class="setup-item">
+                    <label for="player1-name">Player 1 Name</label>
+                    <input type="text" id="player1-name" value="Player 1">
+                </div>
+                <div class="setup-item">
+                    <label for="player2-name">Player 2 Name</label>
+                    <input type="text" id="player2-name" value="Player 2">
+                </div>
+                <div class="setup-item">
+                    <label for="match-type">Match Type</label>
+                    <select id="match-type">
+                        <option value="T20">T20</option>
+                        <option value="ODI">ODI</option>
+                        <option value="Test">Test</option>
+                    </select>
+                </div>
+                <div class="setup-item">
+                    <label for="difficulty">Difficulty</label>
+                    <select id="difficulty">
+                        <option value="Easy">Easy</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="Hard">Hard</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="scoreboard">
+            <div class="player" id="player1">
+                <h2 id="player1-name">Player 1</h2>
+                <div class="score" id="score1">0</div>
+                <div class="balls" id="balls1">Balls: 0</div>
+                <div class="player-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Fours</span>
+                        <span class="stat-value" id="fours1">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Sixes</span>
+                        <span class="stat-value" id="sixes1">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Strike Rate</span>
+                        <span class="stat-value" id="sr1">0.00</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Economy</span>
+                        <span class="stat-value" id="eco1">0.00</span>
+                    </div>
+                </div>
+            </div>
+            <div class="player" id="player2">
+                <h2 id="player2-name">Player 2</h2>
+                <div class="score" id="score2">0</div>
+                <div class="balls" id="balls2">Balls: 0</div>
+                <div class="player-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Fours</span>
+                        <span class="stat-value" id="fours2">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Sixes</span>
+                        <span class="stat-value" id="sixes2">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Strike Rate</span>
+                        <span class="stat-value" id="sr2">0.00</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Economy</span>
+                        <span class="stat-value" id="eco2">0.00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="toss-btn">Toss Coin</button>
+            <button id="start-btn" disabled>Start Game</button>
+            <button id="bat-btn" disabled>Bat</button>
+            <button id="bowl-btn" disabled>Bowl</button>
+        </div>
+
+        <div class="game-log" id="game-log"></div>
+
+        <div class="result-screen" id="result-screen">
+            <h2>Game Over!</h2>
+            <div id="result-message"></div>
+            <button id="play-again">Play Again</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import init, { GameState } from './pkg/cricket_game_rust.js';
+
+        async function run() {
+            await init();
+            
+            let game = GameState.new();
+            
+            // DOM Elements
+            const player1NameInput = document.getElementById('player1-name');
+            const player2NameInput = document.getElementById('player2-name');
+            const matchTypeSelect = document.getElementById('match-type');
+            const difficultySelect = document.getElementById('difficulty');
+            const tossBtn = document.getElementById('toss-btn');
+            const startBtn = document.getElementById('start-btn');
+            const batBtn = document.getElementById('bat-btn');
+            const bowlBtn = document.getElementById('bowl-btn');
+            const playAgainBtn = document.getElementById('play-again');
+            const gameLog = document.getElementById('game-log');
+            const resultScreen = document.getElementById('result-screen');
+            const resultMessage = document.getElementById('result-message');
+            
+            // Player elements
+            const player1 = document.getElementById('player1');
+            const player2 = document.getElementById('player2');
+            const player1Name = document.getElementById('player1-name');
+            const player2Name = document.getElementById('player2-name');
+            const score1 = document.getElementById('score1');
+            const score2 = document.getElementById('score2');
+            const balls1 = document.getElementById('balls1');
+            const balls2 = document.getElementById('balls2');
+            
+            // Stats elements
+            const fours1 = document.getElementById('fours1');
+            const sixes1 = document.getElementById('sixes1');
+            const sr1 = document.getElementById('sr1');
+            const eco1 = document.getElementById('eco1');
+            const fours2 = document.getElementById('fours2');
+            const sixes2 = document.getElementById('sixes2');
+            const sr2 = document.getElementById('sr2');
+            const eco2 = document.getElementById('eco2');
+
+            function updateUI() {
+                const state = game.get_state();
+                
+                // Update player names
+                player1Name.textContent = state.player_names[0];
+                player2Name.textContent = state.player_names[1];
+                
+                // Update scores
+                score1.textContent = state.scores[0];
+                score2.textContent = state.scores[1];
+                balls1.textContent = `Balls: ${state.balls[0]}`;
+                balls2.textContent = `Balls: ${state.balls[1]}`;
+                
+                // Update player stats
+                fours1.textContent = state.player_stats[0].fours;
+                sixes1.textContent = state.player_stats[0].sixes;
+                sr1.textContent = state.player_stats[0].strike_rate.toFixed(2);
+                eco1.textContent = state.player_stats[0].economy_rate.toFixed(2);
+                fours2.textContent = state.player_stats[1].fours;
+                sixes2.textContent = state.player_stats[1].sixes;
+                sr2.textContent = state.player_stats[1].strike_rate.toFixed(2);
+                eco2.textContent = state.player_stats[1].economy_rate.toFixed(2);
+                
+                // Update player highlights
+                player1.classList.toggle('active', state.current_player === 1);
+                player2.classList.toggle('active', state.current_player === 2);
+                
+                // Update button states
+                tossBtn.disabled = state.toss_completed;
+                startBtn.disabled = !state.toss_completed || state.game_started;
+                batBtn.disabled = !state.game_started || !state.is_batting;
+                bowlBtn.disabled = !state.game_started || state.is_batting;
+                
+                // Update game log
+                gameLog.innerHTML = state.events.map(event => 
+                    `<div class="event">${event.message}</div>`
+                ).join('');
+                
+                // Update result screen
+                if (state.game_over) {
+                    resultScreen.classList.add('show');
+                    resultMessage.textContent = state.winner 
+                        ? `${state.player_names[(state.winner - 1) as usize]} wins!`
+                        : "It's a tie!";
+                }
+            }
+
+            // Setup event listeners
+            player1NameInput.addEventListener('change', () => {
+                game.set_player_names(player1NameInput.value, player2NameInput.value);
+                updateUI();
+            });
+
+            player2NameInput.addEventListener('change', () => {
+                game.set_player_names(player1NameInput.value, player2NameInput.value);
+                updateUI();
+            });
+
+            matchTypeSelect.addEventListener('change', () => {
+                game.set_match_type(matchTypeSelect.value);
+                updateUI();
+            });
+
+            difficultySelect.addEventListener('change', () => {
+                game.set_difficulty(difficultySelect.value);
+                updateUI();
+            });
+
+            // Game event listeners
+            tossBtn.addEventListener('click', () => {
+                game.handle_toss();
+                updateUI();
+            });
+
+            startBtn.addEventListener('click', () => {
+                game.handle_start();
+                updateUI();
+            });
+
+            batBtn.addEventListener('click', () => {
+                game.handle_bat();
+                updateUI();
+            });
+
+            bowlBtn.addEventListener('click', () => {
+                game.handle_bowl();
+                updateUI();
+            });
+
+            playAgainBtn.addEventListener('click', () => {
+                game.reset();
+                resultScreen.classList.remove('show');
+                updateUI();
+            });
+
+            // Initial UI update
+            updateUI();
+        }
+
+        run();
+    </script>
+</body>
+</html> 
